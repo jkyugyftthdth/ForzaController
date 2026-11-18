@@ -1,21 +1,41 @@
 name: Build portable EXE
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install --only-binary :all: -r requirements.txt pyinstaller
-      - run: >
-          pyinstaller --noconfirm --clean --onefile --noconsole --uac-admin --name ForzaController
-          --paths . --add-data "web;web" --collect-all qrcode --collect-all vgamepad --hidden-import PIL.ImageTk app/main.py
+
+      - name: Install core dependencies
+        run: pip install aiohttp cryptography "qrcode[pil]" pillow pyinstaller
+
+      - name: Install vgamepad (optional, may fail)
+        run: pip install vgamepad
+        continue-on-error: true
+
+      - name: Build EXE
+        run: |
+          pyinstaller --noconfirm --clean --onefile --noconsole --uac-admin --name ForzaController --paths . --add-data "web;web" --collect-all qrcode --hidden-import PIL.ImageTk app/main.py
+
+      - name: Verify EXE exists
+        run: |
+          if (Test-Path dist/ForzaController.exe) {
+            Write-Host "Build successful! Size: $((Get-Item dist/ForzaController.exe).Length / 1MB) MB"
+          } else {
+            Write-Host "ERROR: EXE not found"
+            exit 1
+          }
+
       - uses: actions/upload-artifact@v4
         with:
           name: ForzaController-portable
