@@ -11,7 +11,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r requirements.txt pyinstaller
+          cache: pip
+      - run: pip install --only-binary :all: -r requirements.txt pyinstaller
       - run: >
           pyinstaller --noconfirm --clean --onefile --noconsole --uac-admin --name ForzaController
           --paths . --add-data "web;web" --collect-all qrcode --collect-all vgamepad --hidden-import PIL.ImageTk app/main.py
